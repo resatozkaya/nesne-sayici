@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NesneAI</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+:root{--bg:#0a0a0f;--surface:#12121a;--border:#1e1e2e;--accent:#00ff88;--accent3:#00d4ff;--text:#e8e8f0;--muted:#5a5a7a;--card:#16161f}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,136,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 0 80px}
+
+header{padding:20px 20px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent3));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-size:18px;font-weight:800}
+.logo-text span{color:var(--accent)}
+.badge{font-family:'Space Mono',monospace;font-size:9px;padding:3px 8px;border-radius:20px;border:1px solid #4285f4;color:#4285f4}
+
+/* KEY SECTION */
+.key-section{margin:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden}
+.key-section::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4285f4,var(--accent3))}
+.key-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;display:block}
+.key-row{display:flex;gap:8px;align-items:stretch}
+.key-input{flex:1;padding:12px 14px;background:var(--surface);border:2px solid var(--border);border-radius:10px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text);outline:none;transition:border .2s;min-width:0}
+.key-input:focus{border-color:var(--accent)}
+.key-btn{padding:12px 18px;background:linear-gradient(135deg,var(--accent),var(--accent3));border:none;border-radius:10px;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:#0a0a0f;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.key-status{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:8px}
+.key-status.ok{color:var(--accent)}
+
+/* CAMERA */
+.cam-section{padding:0 20px 12px}
+.cam-wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:#000;aspect-ratio:4/3}
+.corner{position:absolute;width:20px;height:20px;z-index:5}
+.corner-tl{top:8px;left:8px;border-top:2px solid var(--accent);border-left:2px solid var(--accent)}
+.corner-tr{top:8px;right:8px;border-top:2px solid var(--accent);border-right:2px solid var(--accent)}
+.corner-bl{bottom:8px;left:8px;border-bottom:2px solid var(--accent);border-left:2px solid var(--accent)}
+.corner-br{bottom:8px;right:8px;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent)}
+.placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#000}
+.ph-icon{font-size:40px;opacity:.2}
+.ph-text{color:var(--muted);font-size:12px;text-align:center;max-width:200px;line-height:1.6}
+video{width:100%;height:100%;object-fit:cover;display:block}
+#snapCanvas{display:none}
+#frozenImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:2}
+.analyzing{position:absolute;inset:0;background:rgba(10,10,15,.9);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:10}
+.analyzing.show{display:flex}
+.spinner{width:50px;height:50px;border:3px solid var(--border);border-top-color:#4285f4;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-text{font-family:'Space Mono',monospace;font-size:10px;color:#4285f4;letter-spacing:2px}
+
+/* QUESTION */
+.q-section{padding:0 20px 14px}
+.lbl{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;display:block}
+.q-input{width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;color:var(--text);outline:none}
+.q-input:focus{border-color:var(--accent)}
+.quick-qs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.qq{padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'Syne',sans-serif}
+.qq:hover{border-color:var(--accent);color:var(--accent)}
+
+/* RESULT */
+.result-section{padding:0 20px 16px}
+.result-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;position:relative;overflow:hidden}
+.result-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4285f4,var(--accent3),var(--accent))}
+.r-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:12px}
+.big-num-row{display:flex;align-items:flex-end;gap:8px;margin-bottom:12px}
+.big-num{font-size:72px;font-weight:800;line-height:1;background:linear-gradient(135deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.big-unit{font-size:16px;font-weight:700;color:var(--muted);margin-bottom:10px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;height:80px;color:var(--muted);font-size:12px}
+.nesne-list{display:flex;flex-direction:column;gap:0}
+.nesne-item{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.nesne-item:last-child{border-bottom:none}
+.nesne-name{color:var(--text);font-size:13px}
+.nesne-count{font-family:'Space Mono',monospace;font-weight:700;color:var(--accent);font-size:14px}
+.aciklama{font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+
+/* CONTROLS */
+.controls{padding:0 20px;display:flex;flex-direction:column;gap:10px}
+.btn-cam{width:100%;padding:15px;background:linear-gradient(135deg,var(--accent),var(--accent3));border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--bg);cursor:pointer}
+.btn-cam:disabled{opacity:.4;cursor:not-allowed}
+.btn-snap{width:100%;padding:14px;background:linear-gradient(135deg,#4285f4,#0f9d58);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#fff;cursor:pointer}
+.btn-snap:disabled{opacity:.4;cursor:not-allowed}
+.btn-row{display:flex;gap:8px}
+.btn-sec{flex:1;padding:12px;background:transparent;border:1px solid var(--border);border-radius:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text);cursor:pointer}
+.btn-sec:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sec:disabled{opacity:.3;cursor:not-allowed}
+
+/* HISTORY */
+.hist-section{padding:0 20px;margin-top:16px}
+.h-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.h-num{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:var(--accent);min-width:36px}
+.h-desc{font-size:11px;color:var(--muted);flex:1;line-height:1.4}
+.h-time{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)}
+.no-hist{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);text-align:center;padding:12px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🔍</div>
+      <div class="logo-text">Nesne<span>AI</span></div>
+    </div>
+    <div class="badge">GEMINI 2.5</div>
+  </header>
+
+  <!-- API KEY -->
+  <div class="key-section">
+    <span class="key-label">GEMİNİ API KEY</span>
+    <div class="key-row">
+      <input class="key-input" id="keyInput" type="text"
+        placeholder="AIzaSy... buraya yapıştır"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <button class="key-btn" id="keyBtn" onclick="saveKey()">Kaydet</button>
+    </div>
+    <div class="key-status" id="keyStatus">⚠ Key girilmedi — aistudio.google.com'dan al</div>
+  </div>
+
+  <!-- CAMERA -->
+  <div class="cam-section">
+    <div class="cam-wrap" id="camWrap">
+      <div class="corner corner-tl"></div>
+      <div class="corner corner-tr"></div>
+      <div class="corner corner-bl"></div>
+      <div class="corner corner-br"></div>
+      <div class="placeholder" id="placeholder">
+        <div class="ph-icon">📷</div>
+        <div class="ph-text">Kamerayı başlat, nesneye doğrult ve fotoğraf çek</div>
+      </div>
+      <video id="video" autoplay playsinline muted style="display:none"></video>
+      <img id="frozenImg" alt="">
+      <canvas id="snapCanvas"></canvas>
+      <div class="analyzing" id="analyzing">
+        <div class="spinner"></div>
+        <div class="spin-text">ANALİZ EDİYOR...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUESTION -->
+  <div class="q-section">
+    <span class="lbl">SORU / KOMUT</span>
+    <input class="q-input" id="qInput" type="text"
+      value="Görüntüdeki tüm nesneleri listele ve her birinin kaç tane olduğunu söyle.">
+    <div class="quick-qs">
+      <button class="qq" onclick="setQ('Görüntüdeki tüm nesneleri listele ve her birinin kaç tane olduğunu söyle.')">🔢 Tümünü say</button>
+      <button class="qq" onclick="setQ('Sadece şekerleri say ve kaç tane olduğunu söyle.')">🍬 Şekerleri say</button>
+      <button class="qq" onclick="setQ('Görüntüdeki geometrik şekilleri say: kare, daire, üçgen, dikdörtgen kaç tane var?')">📐 Şekil analizi</button>
+      <button class="qq" onclick="setQ('Bu görüntüyü detaylıca tanımla. Ne var, renkleri ve konumları neler?')">🔍 Detaylı tanımla</button>
+      <button class="qq" onclick="setQ('Kaç tane insan var? Varsa ne yapıyorlar?')">👤 Kişi say</button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-section">
+    <div class="result-card">
+      <div class="r-label">AI SONUCU</div>
+      <div id="emptyState" class="empty-state">
+        <span style="font-size:32px;opacity:.3">🤖</span>
+        <span>Fotoğraf çekince Gemini analiz edecek</span>
+      </div>
+      <div id="resultCount" class="big-num-row" style="display:none">
+        <div class="big-num" id="bigNum">0</div>
+        <div class="big-unit">adet</div>
+      </div>
+      <div id="nesneList" class="nesne-list" style="display:none"></div>
+      <div id="aciklama" class="aciklama" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button class="btn-cam" id="startBtn" onclick="startCam()">📷 Kamerayı Başlat</button>
+    <button class="btn-snap" id="snapBtn" onclick="takeSnap()" disabled>
+      ✨ Fotoğraf Çek &amp; Analiz Et
+    </button>
+    <div class="btn-row">
+      <button class="btn-sec" id="resumeBtn" onclick="resumeCam()" disabled>🔄 Tekrar Çek</button>
+      <button class="btn-sec" onclick="resetResult()">🗑 Temizle</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="hist-section">
+    <span class="lbl">GEÇMİŞ ANALİZLER</span>
+    <div id="histList"><div class="no-hist">Henüz analiz yapılmadı</div></div>
+  </div>
+</div>
+
+<script>
+// ── STATE ────────────────────────────────────────────
+var geminiKey = '';
+var video, snapCanvas, snapCtx, stream, isRunning = false;
+var historyArr = [];
+
+// ── KEY MANAGEMENT ───────────────────────────────────
+function saveKey() {
+  var input = document.getElementById('keyInput');
+  var k = input.value.trim();
+  if (!k || k.length < 10) {
+    alert('Geçerli bir API key girin!');
+    return;
+  }
+  geminiKey = k;
+  try { localStorage.setItem('gkey', k); } catch(e) {}
+  showKeyOk(k);
+}
+
+function showKeyOk(k) {
+  var st = document.getElementById('keyStatus');
+  st.textContent = '✅ Key aktif: ' + k.slice(0,12) + '...';
+  st.className = 'key-status ok';
+}
+
+// Load key on page start
+(function() {
+  var saved = '';
+  try { saved = localStorage.getItem('gkey') || ''; } catch(e) {}
+  if (saved) {
+    geminiKey = saved;
+    document.getElementById('keyInput').value = saved;
+    showKeyOk(saved);
+  }
+})();
+
+// ── CAMERA ───────────────────────────────────────────
+function startCam() {
+  if (!geminiKey) {
+    alert('Önce API key girin ve Kaydet butonuna basın!');
+    return;
+  }
+  video = document.getElementById('video');
+  snapCanvas = document.getElementById('snapCanvas');
+  snapCtx = snapCanvas.getContext('2d');
+  var btn = document.getElementById('startBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Açılıyor...';
+
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }
+  }).then(function(s) {
+    stream = s;
+    video.srcObject = s;
+    video.onloadedmetadata = function() {
+      video.play();
+      document.getElementById('placeholder').style.display = 'none';
+      video.style.display = 'block';
+      snapCanvas.width = video.videoWidth || 1280;
+      snapCanvas.height = video.videoHeight || 960;
+      isRunning = true;
+      btn.textContent = '✅ Kamera Açık';
+      document.getElementById('snapBtn').disabled = false;
+      document.getElementById('resumeBtn').disabled = false;
+    };
+  }).catch(function(e) {
+    btn.disabled = false;
+    btn.textContent = '🔄 Tekrar Dene';
+    alert(e.name === 'NotAllowedError' ? 'Kamera izni gerekli!' : 'Hata: ' + e.message);
+  });
+}
+
+// ── SNAP & ANALYZE ────────────────────────────────────
+function takeSnap() {
+  if (!isRunning) return;
+  if (!geminiKey) { alert('API key girilmedi!'); return; }
+
+  snapCtx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
+  var dataUrl = snapCanvas.toDataURL('image/jpeg', 0.85);
+  var base64 = dataUrl.split(',')[1];
+
+  var frozen = document.getElementById('frozenImg');
+  frozen.src = dataUrl;
+  frozen.style.display = 'block';
+  video.style.display = 'none';
+
+  document.getElementById('analyzing').classList.add('show');
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultCount').style.display = 'none';
+  document.getElementById('nesneList').style.display = 'none';
+  document.getElementById('aciklama').style.display = 'none';
+  document.getElementById('snapBtn').disabled = true;
+
+  var question = document.getElementById('qInput').value.trim() ||
+    'Görüntüdeki tüm nesneleri listele ve her birinin kaç tane olduğunu söyle.';
+
+  var prompt = 'Sen görüntü analizi ve nesne sayma uzmanısın. Türkçe cevap ver.\n\n' +
+    'GÖREV: ' + question + '\n\n' +
+    'CEVABI MUTLAKA ŞU FORMATTA VER:\n' +
+    'TOPLAM: [toplam nesne sayısı - sadece rakam]\n' +
+    'NESNELER:\n' +
+    '- [nesne adı]: [adet]\n' +
+    '- [nesne adı]: [adet]\n' +
+    '(tüm farklı nesneler için tekrarla)\n' +
+    'YORUM: [2-3 cümle genel açıklama]\n\n' +
+    'Dikkatli say, her nesne türünü ayrı yaz.';
+
+  var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + geminiKey;
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [
+        { text: prompt },
+        { inline_data: { mime_type: 'image/jpeg', data: base64 } }
+      ]}],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+    })
+  })
+  .then(function(r) {
+    if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t); });
+    return r.json();
+  })
+  .then(function(data) {
+    var text = data && data.candidates && data.candidates[0] &&
+               data.candidates[0].content && data.candidates[0].content.parts &&
+               data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+    if (!text) throw new Error('Boş yanıt');
+    document.getElementById('analyzing').classList.remove('show');
+    showResult(text);
+    document.getElementById('resumeBtn').disabled = false;
+    document.getElementById('snapBtn').disabled = false;
+  })
+  .catch(function(e) {
+    document.getElementById('analyzing').classList.remove('show');
+    showError(e.message);
+    document.getElementById('snapBtn').disabled = false;
+    document.getElementById('resumeBtn').disabled = false;
+  });
+}
+
+function showResult(text) {
+  // Parse TOPLAM
+  var toplamMatch = text.match(/TOPLAM:\s*(\d+)/i);
+  var toplam = toplamMatch ? parseInt(toplamMatch[1]) : null;
+
+  // Parse NESNELER
+  var nesneMatch = text.match(/NESNELER:\n([\s\S]+?)(?=YORUM:|$)/i);
+  var nesneItems = [];
+  if (nesneMatch) {
+    var lines = nesneMatch[1].split('\n');
+    lines.forEach(function(line) {
+      line = line.trim();
+      if (!line || !line.startsWith('-')) return;
+      line = line.replace(/^-\s*/, '');
+      var parts = line.split(':');
+      if (parts.length >= 2) {
+        nesneItems.push({ name: parts[0].trim(), count: parts.slice(1).join(':').trim() });
+      }
+    });
+  }
+
+  // Parse YORUM
+  var yorumMatch = text.match(/YORUM:\s*([\s\S]+?)(?=$|\n\n)/i);
+  var yorum = yorumMatch ? yorumMatch[1].trim() : '';
+
+  // Show count
+  if (toplam !== null) {
+    document.getElementById('bigNum').textContent = toplam;
+    document.getElementById('resultCount').style.display = 'flex';
+  }
+
+  // Show list
+  if (nesneItems.length > 0) {
+    var html = '';
+    nesneItems.forEach(function(item) {
+      html += '<div class="nesne-item">' +
+        '<span class="nesne-name">🔹 ' + item.name + '</span>' +
+        '<span class="nesne-count">' + item.count + '</span>' +
+        '</div>';
+    });
+    document.getElementById('nesneList').innerHTML = html;
+    document.getElementById('nesneList').style.display = 'block';
+  } else {
+    // Fallback: show raw text
+    document.getElementById('nesneList').innerHTML =
+      '<div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">' + text + '</div>';
+    document.getElementById('nesneList').style.display = 'block';
+  }
+
+  // Show yorum
+  if (yorum) {
+    document.getElementById('aciklama').textContent = yorum;
+    document.getElementById('aciklama').style.display = 'block';
+  }
+
+  // History
+  var desc = nesneItems.length > 0
+    ? nesneItems.map(function(i) { return i.count + ' ' + i.name; }).join(', ').slice(0, 80)
+    : text.slice(0, 80);
+  addHistory(toplam, desc);
+}
+
+function showError(msg) {
+  document.getElementById('nesneList').innerHTML =
+    '<div style="color:#ff6b6b;font-size:12px;font-family:monospace;word-break:break-all">❌ ' + msg + '</div>';
+  document.getElementById('nesneList').style.display = 'block';
+  addHistory(null, 'Hata: ' + msg.slice(0, 60));
+}
+
+function resumeCam() {
+  document.getElementById('frozenImg').style.display = 'none';
+  if (video) video.style.display = 'block';
+  document.getElementById('resumeBtn').disabled = true;
+}
+
+function resetResult() {
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('resultCount').style.display = 'none';
+  document.getElementById('nesneList').style.display = 'none';
+  document.getElementById('aciklama').style.display = 'none';
+  document.getElementById('frozenImg').style.display = 'none';
+  if (isRunning && video) video.style.display = 'block';
+}
+
+function addHistory(count, desc) {
+  var time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  historyArr.unshift({ count: count, desc: desc || '', time: time });
+  if (historyArr.length > 6) historyArr.pop();
+  var html = historyArr.map(function(h) {
+    return '<div class="h-item">' +
+      '<div class="h-num">' + (h.count != null ? h.count : '?') + '</div>' +
+      '<div class="h-desc">' + h.desc + '</div>' +
+      '<div class="h-time">' + h.time + '</div>' +
+      '</div>';
+  }).join('');
+  document.getElementById('histList').innerHTML = html;
+}
+
+function setQ(q) { document.getElementById('qInput').value = q; }
+</script>
+</body>
+</html>
