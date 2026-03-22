@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NesneAI — Akıllı Sayıcı</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+:root{--bg:#0a0a0f;--surface:#12121a;--border:#1e1e2e;--accent:#00ff88;--accent2:#ff3cac;--accent3:#00d4ff;--text:#e8e8f0;--muted:#5a5a7a;--card:#16161f}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,136,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 0 80px}
+header{padding:20px 20px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent3));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-size:18px;font-weight:800;letter-spacing:-.5px}
+.logo-text span{color:var(--accent)}
+.badge{font-family:'Space Mono',monospace;font-size:9px;padding:3px 8px;border-radius:20px;border:1px solid #4285f4;color:#4285f4;letter-spacing:1px}
+.cam-section{padding:16px 20px 12px}
+.cam-wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:#000;aspect-ratio:4/3}
+.corner{position:absolute;width:20px;height:20px;z-index:5}
+.corner-tl{top:8px;left:8px;border-top:2px solid var(--accent);border-left:2px solid var(--accent)}
+.corner-tr{top:8px;right:8px;border-top:2px solid var(--accent);border-right:2px solid var(--accent)}
+.corner-bl{bottom:8px;left:8px;border-bottom:2px solid var(--accent);border-left:2px solid var(--accent)}
+.corner-br{bottom:8px;right:8px;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent)}
+.placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:3;background:#000}
+.ph-icon{font-size:44px;opacity:.2}
+.ph-text{color:var(--muted);font-size:12px;text-align:center;max-width:200px;line-height:1.6}
+video{width:100%;height:100%;object-fit:cover;display:block}
+#snapCanvas{display:none}
+.analyzing{position:absolute;inset:0;background:rgba(10,10,15,.88);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:10}
+.analyzing.show{display:flex}
+.ai-spinner{width:52px;height:52px;border:3px solid var(--border);border-top-color:#4285f4;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-text{font-family:'Space Mono',monospace;font-size:11px;color:#4285f4;letter-spacing:2px;text-align:center;padding:0 20px}
+#frozenImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:2}
+.result-section{padding:0 20px 16px}
+.result-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;position:relative;overflow:hidden;min-height:100px}
+.result-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4285f4,var(--accent3),var(--accent))}
+.result-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:12px}
+.result-count{display:flex;align-items:flex-end;gap:10px;margin-bottom:12px}
+.big-num{font-size:80px;font-weight:800;line-height:1;background:linear-gradient(135deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.count-unit{font-size:18px;font-weight:700;color:var(--muted);margin-bottom:12px}
+.ai-response{font-size:13px;color:var(--text);line-height:1.7;padding:12px;background:var(--surface);border-radius:10px;border:1px solid var(--border);display:none;word-break:break-word}
+.ai-response.show{display:block}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;height:70px;color:var(--muted);font-size:12px}
+.empty-icon{font-size:28px;opacity:.3}
+.question-section{padding:0 20px 16px}
+.q-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;display:block}
+.q-input{width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border .2s}
+.q-input:focus{border-color:var(--accent)}
+.q-input::placeholder{color:var(--muted)}
+.quick-qs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.qq{padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'Syne',sans-serif}
+.qq:hover{border-color:var(--accent);color:var(--accent)}
+.controls{padding:0 20px;display:flex;flex-direction:column;gap:10px}
+.btn-cam{width:100%;padding:16px;background:linear-gradient(135deg,var(--accent),var(--accent3));border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--bg);cursor:pointer;transition:all .2s}
+.btn-cam:disabled{opacity:.4;cursor:not-allowed}
+.btn-snap{width:100%;padding:15px;background:linear-gradient(135deg,#4285f4,#0f9d58);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff;cursor:pointer;transition:all .2s}
+.btn-snap:disabled{opacity:.4;cursor:not-allowed}
+.btn-row{display:flex;gap:8px}
+.btn-sec{flex:1;padding:12px;background:transparent;border:1px solid var(--border);border-radius:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;transition:all .2s}
+.btn-sec:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sec:disabled{opacity:.3;cursor:not-allowed}
+.history-section{padding:0 20px;margin-top:16px}
+.h-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;display:block}
+.h-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.h-num{font-family:'Space Mono',monospace;font-size:20px;font-weight:700;color:var(--accent);min-width:40px}
+.h-desc{font-size:11px;color:var(--muted);line-height:1.5;flex:1}
+.h-time{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)}
+.no-history{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);text-align:center;padding:16px 0}
+.err-detail{font-size:10px;color:#ff6b6b;font-family:'Space Mono',monospace;margin-top:8px;padding:8px;background:rgba(255,60,60,.08);border-radius:6px;border:1px solid rgba(255,60,60,.2);display:none;word-break:break-all}
+.err-detail.show{display:block}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🔍</div>
+      <div class="logo-text">Nesne<span>AI</span></div>
+    </div>
+    <div class="badge">GEMINI 1.5</div>
+  </header>
+
+  <div class="cam-section">
+    <div class="cam-wrap" id="camWrap">
+      <div class="corner corner-tl"></div>
+      <div class="corner corner-tr"></div>
+      <div class="corner corner-bl"></div>
+      <div class="corner corner-br"></div>
+      <div class="placeholder" id="placeholder">
+        <div class="ph-icon">📷</div>
+        <div class="ph-text">Kamerayı başlat, nesneye doğrult ve fotoğraf çek</div>
+      </div>
+      <video id="video" autoplay playsinline muted style="display:none"></video>
+      <img id="frozenImg" alt="">
+      <canvas id="snapCanvas"></canvas>
+      <div class="analyzing" id="analyzingOverlay">
+        <div class="ai-spinner"></div>
+        <div class="ai-text" id="aiStatus">GEMİNİ ANALİZ EDİYOR...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="question-section">
+    <span class="q-label">SORU / KOMUT</span>
+    <input class="q-input" id="questionInput" type="text"
+      placeholder="Kaç tane şeker var?"
+      value="Bu görüntüdeki nesneleri say ve kaç tane olduğunu söyle.">
+    <div class="quick-qs">
+      <button class="qq" onclick="setQ('Bu görüntüdeki nesneleri say ve kaç tane olduğunu söyle.')">🔢 Hepsini say</button>
+      <button class="qq" onclick="setQ('Sadece şekerleri say, kaç tane var?')">🍬 Şekerleri say</button>
+      <button class="qq" onclick="setQ('Kaç farklı renk var? Renkleri ve adetlerini listele.')">🎨 Renk analizi</button>
+      <button class="qq" onclick="setQ('Bu nesneleri tanımla ve detaylı açıkla.')">🔍 Tanımla</button>
+      <button class="qq" onclick="setQ('Kaç tane insan var?')">👤 Kişi say</button>
+    </div>
+  </div>
+
+  <div class="result-section">
+    <div class="result-card">
+      <div class="result-label">AI SONUCU</div>
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon">🤖</div>
+        <span>Fotoğraf çekince Gemini analiz edecek</span>
+      </div>
+      <div id="resultCount" class="result-count" style="display:none">
+        <div class="big-num" id="bigNum">0</div>
+        <div class="count-unit">adet</div>
+      </div>
+      <div class="ai-response" id="aiResponse"></div>
+      <div class="err-detail" id="errDetail"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn-cam" id="startBtn" onclick="startCam()">📷 Kamerayı Başlat</button>
+    <button class="btn-snap" id="snapBtn" onclick="takeSnap()" disabled>
+      ✨ Fotoğraf Çek & Gemini ile Analiz Et
+    </button>
+    <div class="btn-row">
+      <button class="btn-sec" id="resumeBtn" onclick="resumeCam()" disabled>🔄 Tekrar Çek</button>
+      <button class="btn-sec" onclick="resetAll()">🗑 Temizle</button>
+    </div>
+  </div>
+
+  <div class="history-section">
+    <span class="h-label">GEÇMİŞ ANALİZLER</span>
+    <div id="historyList"><div class="no-history">Henüz analiz yapılmadı</div></div>
+  </div>
+</div>
+
+<script>
+// gemini-2.5-flash — ücretsiz kotada çalışır (15 istek/dakika, 1500 istek/gün)
+const API_KEY = 'AIzaSyDVx20A32t2GUNqBymXltpwr6LUOElMVt8';
+const API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=' + API_KEY;
+
+let video, snapCanvas, snapCtx, stream, isRunning = false, history = [];
+
+async function startCam() {
+  video = document.getElementById('video');
+  snapCanvas = document.getElementById('snapCanvas');
+  snapCtx = snapCanvas.getContext('2d');
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('startBtn').textContent = '⏳ Açılıyor...';
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }
+    });
+    video.srcObject = stream;
+    await new Promise(r => { video.onloadedmetadata = r; });
+    await video.play();
+    document.getElementById('placeholder').style.display = 'none';
+    video.style.display = 'block';
+    snapCanvas.width = video.videoWidth || 1280;
+    snapCanvas.height = video.videoHeight || 960;
+    isRunning = true;
+    document.getElementById('snapBtn').disabled = false;
+    document.getElementById('startBtn').textContent = '✅ Kamera Açık';
+  } catch(e) {
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('startBtn').textContent = '🔄 Tekrar Dene';
+    alert(e.name === 'NotAllowedError'
+      ? 'Kamera izni gerekli!'
+      : 'Kamera açılamadı: ' + e.message);
+  }
+}
+
+async function takeSnap() {
+  if (!isRunning) return;
+  document.getElementById('snapBtn').disabled = true;
+  document.getElementById('resumeBtn').disabled = true;
+  document.getElementById('errDetail').classList.remove('show');
+
+  snapCtx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
+  const dataUrl = snapCanvas.toDataURL('image/jpeg', 0.8);
+  const base64 = dataUrl.split(',')[1];
+
+  const frozen = document.getElementById('frozenImg');
+  frozen.src = dataUrl;
+  frozen.style.display = 'block';
+  video.style.display = 'none';
+
+  document.getElementById('analyzingOverlay').classList.add('show');
+  document.getElementById('aiStatus').textContent = 'GEMİNİ 1.5 ANALİZ EDİYOR...';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultCount').style.display = 'none';
+  document.getElementById('aiResponse').classList.remove('show');
+
+  const question = document.getElementById('questionInput').value.trim() ||
+    'Bu görüntüdeki nesneleri say ve kaç tane olduğunu söyle.';
+
+  const prompt = `Sen bir nesne sayma asistanısın. Türkçe cevap ver.
+Görev: ${question}
+
+Cevabının ilk satırı MUTLAKA şu formatta olsun:
+SAYI: [sadece rakam]
+
+Sonra 2-3 cümle açıklama yaz.`;
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: 'image/jpeg', data: base64 } }
+          ]
+        }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 400 }
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error('HTTP ' + response.status + ': ' + errText);
+    }
+
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Boş yanıt: ' + JSON.stringify(data));
+
+    const match = text.match(/SAYI:\s*(\d+)/i);
+    const count = match ? parseInt(match[1]) : null;
+    const cleanText = text.replace(/SAYI:\s*\d+\n?/i, '').trim();
+
+    document.getElementById('analyzingOverlay').classList.remove('show');
+    if (count !== null) {
+      document.getElementById('bigNum').textContent = count;
+      document.getElementById('resultCount').style.display = 'flex';
+    }
+    document.getElementById('aiResponse').textContent = cleanText;
+    document.getElementById('aiResponse').classList.add('show');
+    addHistory(count, cleanText);
+    document.getElementById('resumeBtn').disabled = false;
+
+  } catch(e) {
+    document.getElementById('analyzingOverlay').classList.remove('show');
+    document.getElementById('aiResponse').textContent = '❌ Hata oluştu:';
+    document.getElementById('aiResponse').classList.add('show');
+    document.getElementById('errDetail').textContent = e.message;
+    document.getElementById('errDetail').classList.add('show');
+    document.getElementById('snapBtn').disabled = false;
+    document.getElementById('resumeBtn').disabled = false;
+    addHistory(null, 'Hata: ' + e.message.slice(0, 60));
+  }
+}
+
+function resumeCam() {
+  document.getElementById('frozenImg').style.display = 'none';
+  video.style.display = 'block';
+  document.getElementById('snapBtn').disabled = false;
+  document.getElementById('resumeBtn').disabled = true;
+}
+
+function resetAll() {
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('resultCount').style.display = 'none';
+  document.getElementById('aiResponse').classList.remove('show');
+  document.getElementById('errDetail').classList.remove('show');
+  document.getElementById('frozenImg').style.display = 'none';
+  if (isRunning) { video.style.display = 'block'; document.getElementById('snapBtn').disabled = false; }
+  document.getElementById('resumeBtn').disabled = true;
+}
+
+function addHistory(count, desc) {
+  const time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  history.unshift({ count, desc: (desc || '').slice(0, 80), time });
+  if (history.length > 6) history.pop();
+  document.getElementById('historyList').innerHTML = history.map(h => `
+    <div class="h-item">
+      <div class="h-num">${h.count != null ? h.count : '?'}</div>
+      <div class="h-desc">${h.desc}</div>
+      <div class="h-time">${h.time}</div>
+    </div>`).join('');
+}
+
+function setQ(q) { document.getElementById('questionInput').value = q; }
+</script>
+</body>
+</html>
