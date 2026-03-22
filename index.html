@@ -155,7 +155,7 @@ video{width:100%;height:100%;object-fit:cover;display:block}
 // gemini-1.5-flash — ücretsiz kotada çalışır (15 istek/dakika, 1500 istek/gün)
 const API_KEY = 'AIzaSyDVx20A32t2GUNqBymXltpwr6LUOElMVt8';
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=' + API_KEY;
-let video, snapCanvas, snapCtx, stream, isRunning = false, history = [];
+  let video, snapCanvas, snapCtx, stream, isRunning = false, history = [];
 
 async function startCam() {
   video = document.getElementById('video');
