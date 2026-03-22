@@ -70,7 +70,6 @@ video{width:100%;height:100%;object-fit:cover;display:block}
 .h-desc{font-size:11px;color:var(--muted);line-height:1.5;flex:1}
 .h-time{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)}
 .no-history{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);text-align:center;padding:16px 0}
-/* Error detail */
 .err-detail{font-size:10px;color:#ff6b6b;font-family:'Space Mono',monospace;margin-top:8px;padding:8px;background:rgba(255,60,60,.08);border-radius:6px;border:1px solid rgba(255,60,60,.2);display:none;word-break:break-all}
 .err-detail.show{display:block}
 </style>
@@ -82,7 +81,7 @@ video{width:100%;height:100%;object-fit:cover;display:block}
       <div class="logo-icon">🔍</div>
       <div class="logo-text">Nesne<span>AI</span></div>
     </div>
-    <div class="badge">GEMINI</div>
+    <div class="badge">GEMINI 1.5</div>
   </header>
 
   <div class="cam-section">
@@ -153,9 +152,9 @@ video{width:100%;height:100%;object-fit:cover;display:block}
 </div>
 
 <script>
-// Gemini 2.0 Flash — en güncel ücretsiz model
+// gemini-1.5-flash — ücretsiz kotada çalışır (15 istek/dakika, 1500 istek/gün)
 const API_KEY = 'AIzaSyDVx20A32t2GUNqBymXltpwr6LUOElMVt8';
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + API_KEY;
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + API_KEY;
 
 let video, snapCanvas, snapCtx, stream, isRunning = false, history = [];
 
@@ -183,7 +182,7 @@ async function startCam() {
     document.getElementById('startBtn').disabled = false;
     document.getElementById('startBtn').textContent = '🔄 Tekrar Dene';
     alert(e.name === 'NotAllowedError'
-      ? 'Kamera izni gerekli! Tarayıcı adres çubuğundaki kilit ikonuna tıkla → Kamera → İzin Ver.'
+      ? 'Kamera izni gerekli!'
       : 'Kamera açılamadı: ' + e.message);
   }
 }
@@ -194,18 +193,17 @@ async function takeSnap() {
   document.getElementById('resumeBtn').disabled = true;
   document.getElementById('errDetail').classList.remove('show');
 
-  // Freeze frame
   snapCtx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
   const dataUrl = snapCanvas.toDataURL('image/jpeg', 0.8);
   const base64 = dataUrl.split(',')[1];
 
-  // Show frozen + overlay
   const frozen = document.getElementById('frozenImg');
   frozen.src = dataUrl;
   frozen.style.display = 'block';
   video.style.display = 'none';
+
   document.getElementById('analyzingOverlay').classList.add('show');
-  document.getElementById('aiStatus').textContent = 'GEMİNİ ANALİZ EDİYOR...';
+  document.getElementById('aiStatus').textContent = 'GEMİNİ 1.5 ANALİZ EDİYOR...';
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('resultCount').style.display = 'none';
   document.getElementById('aiResponse').classList.remove('show');
@@ -213,17 +211,15 @@ async function takeSnap() {
   const question = document.getElementById('questionInput').value.trim() ||
     'Bu görüntüdeki nesneleri say ve kaç tane olduğunu söyle.';
 
-  const prompt = `Sen bir nesne sayma asistanısın. Türkçe olarak cevap ver.
+  const prompt = `Sen bir nesne sayma asistanısın. Türkçe cevap ver.
 Görev: ${question}
 
-Cevabının ilk satırı mutlaka şu formatta olsun:
-SAYI: [sadece bir rakam]
+Cevabının ilk satırı MUTLAKA şu formatta olsun:
+SAYI: [sadece rakam]
 
-Sonra kısa ve net açıklamanı yaz (2-3 cümle).`;
+Sonra 2-3 cümle açıklama yaz.`;
 
   try {
-    document.getElementById('aiStatus').textContent = 'API\'YE BAĞLANILIYOR...';
-
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -234,43 +230,36 @@ Sonra kısa ve net açıklamanı yaz (2-3 cümle).`;
             { inline_data: { mime_type: 'image/jpeg', data: base64 } }
           ]
         }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 400
-        }
+        generationConfig: { temperature: 0.1, maxOutputTokens: 400 }
       })
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errText}`);
+      throw new Error('HTTP ' + response.status + ': ' + errText);
     }
 
     const data = await response.json();
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Boş yanıt: ' + JSON.stringify(data));
 
-    if (!text) throw new Error('API boş yanıt döndü: ' + JSON.stringify(data));
-
-    // Parse
     const match = text.match(/SAYI:\s*(\d+)/i);
     const count = match ? parseInt(match[1]) : null;
     const cleanText = text.replace(/SAYI:\s*\d+\n?/i, '').trim();
 
     document.getElementById('analyzingOverlay').classList.remove('show');
-
     if (count !== null) {
       document.getElementById('bigNum').textContent = count;
       document.getElementById('resultCount').style.display = 'flex';
     }
     document.getElementById('aiResponse').textContent = cleanText;
     document.getElementById('aiResponse').classList.add('show');
-
     addHistory(count, cleanText);
     document.getElementById('resumeBtn').disabled = false;
 
   } catch(e) {
     document.getElementById('analyzingOverlay').classList.remove('show');
-    document.getElementById('aiResponse').textContent = '❌ Bağlantı hatası — aşağıya bak:';
+    document.getElementById('aiResponse').textContent = '❌ Hata oluştu:';
     document.getElementById('aiResponse').classList.add('show');
     document.getElementById('errDetail').textContent = e.message;
     document.getElementById('errDetail').classList.add('show');
@@ -301,10 +290,9 @@ function addHistory(count, desc) {
   const time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
   history.unshift({ count, desc: (desc || '').slice(0, 80), time });
   if (history.length > 6) history.pop();
-  const list = document.getElementById('historyList');
-  list.innerHTML = history.map(h => `
+  document.getElementById('historyList').innerHTML = history.map(h => `
     <div class="h-item">
-      <div class="h-num">${h.count !== null && h.count !== undefined ? h.count : '?'}</div>
+      <div class="h-num">${h.count != null ? h.count : '?'}</div>
       <div class="h-desc">${h.desc}</div>
       <div class="h-time">${h.time}</div>
     </div>`).join('');
