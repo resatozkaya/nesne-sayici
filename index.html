@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NesneAI — Sayıcı</title>
+<title>NesneAI — Akıllı Sayıcı</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
 :root{--bg:#0a0a0f;--surface:#12121a;--border:#1e1e2e;--accent:#00ff88;--accent2:#ff3cac;--accent3:#00d4ff;--text:#e8e8f0;--muted:#5a5a7a;--card:#16161f}
@@ -14,82 +14,86 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
 header{padding:20px 20px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
 .logo{display:flex;align-items:center;gap:10px}
-.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent3));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
-.logo-text{font-size:17px;font-weight:800;letter-spacing:-.5px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent3));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-size:18px;font-weight:800;letter-spacing:-.5px}
 .logo-text span{color:var(--accent)}
-.status-pill{font-family:'Space Mono',monospace;font-size:9px;padding:4px 10px;border-radius:20px;border:1px solid var(--accent);color:var(--accent);letter-spacing:1px}
+.badge{font-family:'Space Mono',monospace;font-size:9px;padding:3px 8px;border-radius:20px;border:1px solid #4285f4;color:#4285f4;letter-spacing:1px}
 
 /* Camera */
-.cam-section{padding:16px 20px}
-.cam-wrap{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:#000;aspect-ratio:4/3}
-.corner{position:absolute;width:18px;height:18px;z-index:5}
+.cam-section{padding:16px 20px 12px}
+.cam-wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:#000;aspect-ratio:4/3}
+.corner{position:absolute;width:20px;height:20px;z-index:5}
 .corner-tl{top:8px;left:8px;border-top:2px solid var(--accent);border-left:2px solid var(--accent)}
 .corner-tr{top:8px;right:8px;border-top:2px solid var(--accent);border-right:2px solid var(--accent)}
 .corner-bl{bottom:8px;left:8px;border-bottom:2px solid var(--accent);border-left:2px solid var(--accent)}
 .corner-br{bottom:8px;right:8px;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent)}
-.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);z-index:4;opacity:0;top:0}
-.scanning .scan-line{opacity:1;animation:scan 2s linear infinite}
-@keyframes scan{0%{top:0}100%{top:100%}}
 
-.placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:3;background:#000}
-.ph-icon{font-size:42px;opacity:.25}
+.placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:3;background:#000}
+.ph-icon{font-size:44px;opacity:.2}
 .ph-text{color:var(--muted);font-size:12px;text-align:center;max-width:200px;line-height:1.6}
 
 video{width:100%;height:100%;object-fit:cover;display:block}
-#overlay{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
+#snapCanvas{display:none}
 
-/* Grid overlay for zone counting */
-.grid-overlay{position:absolute;inset:0;z-index:3;pointer-events:none;display:none}
+/* Analyzing overlay */
+.analyzing{position:absolute;inset:0;background:rgba(10,10,15,.85);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:10}
+.analyzing.show{display:flex}
+.ai-spinner{width:52px;height:52px;border:3px solid var(--border);border-top-color:#4285f4;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-text{font-family:'Space Mono',monospace;font-size:11px;color:#4285f4;letter-spacing:2px;text-align:center}
 
-/* Count card */
-.count-section{padding:0 20px 16px}
-.count-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden}
-.count-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent3),var(--accent2))}
-.count-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
-.count-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px}
-.big-count{font-size:72px;font-weight:800;line-height:1;background:linear-gradient(135deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;min-width:120px}
-.count-right{text-align:right}
-.motion-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:4px}
-.motion-val{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--accent3)}
+/* Frozen preview */
+#frozenImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:2}
 
-/* Zone grid */
-.zone-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px}
-.zone-cell{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 4px;text-align:center}
-.zone-num{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--accent)}
-.zone-lbl{font-size:9px;color:var(--muted);margin-top:2px}
+/* Result card */
+.result-section{padding:0 20px 16px}
+.result-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;position:relative;overflow:hidden;min-height:120px}
+.result-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4285f4,var(--accent3),var(--accent))}
+.result-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:12px}
 
-/* Stats */
-.stats-bar{padding:0 20px;display:flex;gap:10px;margin-bottom:16px}
-.stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
-.stat-val{font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--accent3)}
-.stat-key{font-size:9px;color:var(--muted);margin-top:2px}
+.result-count{display:flex;align-items:flex-end;gap:10px;margin-bottom:12px}
+.big-num{font-size:80px;font-weight:800;line-height:1;background:linear-gradient(135deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.count-unit{font-size:18px;font-weight:700;color:var(--muted);margin-bottom:12px}
+
+.ai-response{font-size:13px;color:var(--text);line-height:1.7;padding:12px;background:var(--surface);border-radius:10px;border:1px solid var(--border);font-family:'Space Mono',monospace;white-space:pre-wrap;display:none}
+.ai-response.show{display:block}
+
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;height:80px;color:var(--muted);font-size:12px}
+.empty-icon{font-size:32px;opacity:.3}
+
+/* Soru input */
+.question-section{padding:0 20px 16px}
+.q-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;display:block}
+.q-input{width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border .2s}
+.q-input:focus{border-color:var(--accent)}
+.q-input::placeholder{color:var(--muted)}
+
+/* Quick questions */
+.quick-qs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.qq{padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'Syne',sans-serif}
+.qq:hover{border-color:var(--accent);color:var(--accent)}
 
 /* Controls */
 .controls{padding:0 20px;display:flex;flex-direction:column;gap:10px}
-.btn-primary{width:100%;padding:15px;background:linear-gradient(135deg,var(--accent),var(--accent3));border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--bg);cursor:pointer;transition:all .2s}
-.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-cam{width:100%;padding:16px;background:linear-gradient(135deg,var(--accent),var(--accent3));border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--bg);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-cam:disabled{opacity:.4;cursor:not-allowed}
+.btn-snap{width:100%;padding:15px;background:linear-gradient(135deg,#4285f4,#0f9d58);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-snap:disabled{opacity:.4;cursor:not-allowed}
+.btn-snap:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.1)}
 .btn-row{display:flex;gap:8px}
-.btn-sec{flex:1;padding:13px;background:transparent;border:1px solid var(--border);border-radius:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-sec{flex:1;padding:12px;background:transparent;border:1px solid var(--border);border-radius:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
 .btn-sec:hover{border-color:var(--accent);color:var(--accent)}
 .btn-sec:disabled{opacity:.3;cursor:not-allowed}
-.btn-sec.active{border-color:var(--accent);color:var(--accent);background:rgba(0,255,136,.06)}
 
-/* Settings */
-.settings{padding:0 20px;margin-top:4px}
-.setting-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
-.setting-name{font-size:12px;color:var(--text)}
-.setting-val{font-family:'Space Mono',monospace;font-size:11px;color:var(--accent)}
-input[type=range]{-webkit-appearance:none;width:90px;height:4px;background:var(--border);border-radius:2px;outline:none}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer}
-
-/* Mode tabs */
-.mode-tabs{padding:0 20px;margin-bottom:16px;display:flex;gap:8px}
-.tab{flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:transparent;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s;text-align:center}
-.tab.active{border-color:var(--accent);color:var(--accent);background:rgba(0,255,136,.06)}
-
-/* Info box */
-.info-box{margin:0 20px 16px;padding:12px 14px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:10px;font-size:11px;color:rgba(0,212,255,.8);line-height:1.6}
-.info-box strong{display:block;margin-bottom:3px;color:var(--accent3)}
+/* History */
+.history-section{padding:0 20px;margin-top:4px}
+.h-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;display:block}
+.h-list{display:flex;flex-direction:column;gap:8px}
+.h-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px}
+.h-num{font-family:'Space Mono',monospace;font-size:20px;font-weight:700;color:var(--accent);min-width:40px}
+.h-desc{font-size:11px;color:var(--muted);line-height:1.5;flex:1}
+.h-time{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)}
+.no-history{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);text-align:center;padding:16px 0}
 </style>
 </head>
 <body>
@@ -99,17 +103,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
       <div class="logo-icon">🔍</div>
       <div class="logo-text">Nesne<span>AI</span></div>
     </div>
-    <div class="status-pill" id="statusPill">HAZIR</div>
+    <div class="badge">GEMINI</div>
   </header>
-
-  <!-- Mode tabs -->
-  <div style="padding:16px 20px 0">
-    <div class="mode-tabs" style="padding:0;margin-bottom:0">
-      <button class="tab active" onclick="setMode('motion',this)">🎯 Hareket Sayıcı</button>
-      <button class="tab" onclick="setMode('manual',this)">✋ Manuel Sayım</button>
-      <button class="tab" onclick="setMode('grid',this)">📐 Izgara Analiz</button>
-    </div>
-  </div>
 
   <!-- Camera -->
   <div class="cam-section">
@@ -118,334 +113,220 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
       <div class="corner corner-tr"></div>
       <div class="corner corner-bl"></div>
       <div class="corner corner-br"></div>
-      <div class="scan-line"></div>
       <div class="placeholder" id="placeholder">
         <div class="ph-icon">📷</div>
-        <div class="ph-text">Kamerayı başlatmak için aşağıdaki butona bas</div>
+        <div class="ph-text">Kamerayı başlat, nesneye doğrult ve fotoğraf çek</div>
       </div>
       <video id="video" autoplay playsinline muted style="display:none"></video>
-      <canvas id="overlay"></canvas>
-    </div>
-  </div>
-
-  <!-- Info box -->
-  <div class="info-box" id="infoBox">
-    <strong>ℹ Hareket Sayıcı Modu</strong>
-    Kameranın önünden geçen nesneleri sayar. Fotoğraf çek butonuyla anlık görüntüdeki bölgeleri analiz edebilirsin.
-  </div>
-
-  <!-- Count display -->
-  <div class="count-section">
-    <div class="count-card">
-      <div class="count-row">
-        <div>
-          <div class="count-label">TOPLAM SAYI</div>
-          <div class="big-count" id="bigCount">0</div>
-        </div>
-        <div class="count-right">
-          <div class="motion-label">HAREKETLİ BÖLGE</div>
-          <div class="motion-val" id="motionVal">—</div>
-          <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);margin-top:6px" id="fpsEl">— FPS</div>
-        </div>
+      <img id="frozenImg" alt="">
+      <canvas id="snapCanvas"></canvas>
+      <div class="analyzing" id="analyzingOverlay">
+        <div class="ai-spinner"></div>
+        <div class="ai-text">GEMİNİ ANALİZ EDİYOR...</div>
       </div>
-      <!-- Zone grid (hidden by default) -->
-      <div class="zone-grid" id="zoneGrid" style="display:none"></div>
     </div>
   </div>
 
-  <!-- Stats -->
-  <div class="stats-bar">
-    <div class="stat"><div class="stat-val" id="s1">0</div><div class="stat-key">Maks.</div></div>
-    <div class="stat"><div class="stat-val" id="s2">0</div><div class="stat-key">Toplam Geçiş</div></div>
-    <div class="stat"><div class="stat-val" id="s3">0</div><div class="stat-key">Kare</div></div>
+  <!-- Question input -->
+  <div class="question-section">
+    <span class="q-label">SORU / KOMUT</span>
+    <input class="q-input" id="questionInput" type="text" placeholder="Kaç tane şeker var? · Ne renk? · Toplam fiyat?" value="Bu görüntüdeki nesneleri say ve kaç tane olduğunu söyle.">
+    <div class="quick-qs">
+      <button class="qq" onclick="setQ('Bu görüntüdeki nesneleri say ve kaç tane olduğunu söyle.')">🔢 Hepsini say</button>
+      <button class="qq" onclick="setQ('Sadece şekerleri say, kaç tane var?')">🍬 Şekerleri say</button>
+      <button class="qq" onclick="setQ('Kaç farklı renk var? Renkleri ve adetlerini listele.')">🎨 Renk analizi</button>
+      <button class="qq" onclick="setQ('Bu nesneleri tanımla ve detaylı açıkla.')">🔍 Tanımla</button>
+      <button class="qq" onclick="setQ('Kaç tane insan var?')">👤 Kişi say</button>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-section">
+    <div class="result-card">
+      <div class="result-label">AI SONUCU</div>
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon">🤖</div>
+        <span>Fotoğraf çekince Gemini analiz edecek</span>
+      </div>
+      <div id="resultCount" class="result-count" style="display:none">
+        <div class="big-num" id="bigNum">0</div>
+        <div class="count-unit" id="countUnit">adet</div>
+      </div>
+      <div class="ai-response" id="aiResponse"></div>
+    </div>
   </div>
 
   <!-- Controls -->
   <div class="controls">
-    <button class="btn-primary" id="startBtn" onclick="startCam()">📷 Kamerayı Başlat</button>
+    <button class="btn-cam" id="startBtn" onclick="startCam()">📷 Kamerayı Başlat</button>
+    <button class="btn-snap" id="snapBtn" onclick="takeSnap()" disabled>
+      ✨ Fotoğraf Çek & Gemini ile Analiz Et
+    </button>
     <div class="btn-row">
-      <button class="btn-sec" id="snapBtn" onclick="takeSnap()" disabled>📸 Fotoğraf</button>
-      <button class="btn-sec" id="pauseBtn" onclick="togglePause()" disabled>⏸ Duraklat</button>
-      <button class="btn-sec" onclick="resetAll()" id="resetBtn" disabled>🔄 Sıfırla</button>
-    </div>
-    <!-- Manual mode buttons -->
-    <div class="btn-row" id="manualRow" style="display:none">
-      <button class="btn-sec" style="font-size:20px;padding:16px" onclick="manualAdd()">➕</button>
-      <button class="btn-sec" style="font-size:20px;padding:16px" onclick="manualSub()">➖</button>
+      <button class="btn-sec" id="resumeBtn" onclick="resumeCam()" disabled>🔄 Tekrar Çek</button>
+      <button class="btn-sec" onclick="resetAll()" id="resetBtn">🗑 Temizle</button>
     </div>
   </div>
 
-  <!-- Settings -->
-  <div class="settings">
-    <div class="setting-row">
-      <span class="setting-name">Hassasiyet</span>
-      <div style="display:flex;align-items:center;gap:8px">
-        <input type="range" id="sensSlider" min="5" max="50" value="20" oninput="updateSens(this.value)">
-        <span class="setting-val" id="sensVal">20</span>
-      </div>
-    </div>
-    <div class="setting-row" id="gridRow">
-      <span class="setting-name">Izgara Boyutu</span>
-      <div style="display:flex;gap:6px">
-        <button class="btn-sec" style="padding:4px 10px;font-size:11px" onclick="setGrid(2)">2×2</button>
-        <button class="btn-sec" style="padding:4px 10px;font-size:11px" onclick="setGrid(3)">3×3</button>
-        <button class="btn-sec" style="padding:4px 10px;font-size:11px" onclick="setGrid(4)">4×4</button>
-      </div>
+  <!-- History -->
+  <div class="history-section" style="margin-top:16px">
+    <span class="h-label">GEÇMİŞ ANALIZLER</span>
+    <div class="h-list" id="historyList">
+      <div class="no-history">Henüz analiz yapılmadı</div>
     </div>
   </div>
 </div>
 
 <script>
-let video, canvas, ctx, stream;
-let isRunning=false, isPaused=false;
-let prevFrame=null, mode='motion', gridSize=3;
-let manualCount=0, motionCount=0, totalCross=0, frames=0, maxCount=0;
-let sensitivity=20, lastTime=performance.now();
-let wasMotion=false; // for crossing detection
+const API_KEY = 'AIzaSyDVx20A32t2GUNqBymXltpwr6LUOElMVt8';
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-const INFOS={
-  motion:'<strong>ℹ Hareket Sayıcı Modu</strong>Kameranın önünden geçen nesneleri sayar. Nesneler geçiş yaptığında otomatik sayılır.',
-  manual:'<strong>ℹ Manuel Sayım Modu</strong>➕ ve ➖ butonlarıyla sayım yap. Kamera görüntüsü referans olarak gösterilir.',
-  grid:'<strong>ℹ Izgara Analiz Modu</strong>Ekranı bölgelere böler, her bölgedeki hareket yoğunluğunu gösterir. 📸 ile anlık analiz al.'
-};
+let video, snapCanvas, snapCtx, stream;
+let isRunning = false;
+let history = [];
 
-function setMode(m, btn){
-  mode=m;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('infoBox').innerHTML=INFOS[m];
-  document.getElementById('manualRow').style.display=(m==='manual')?'flex':'none';
-  document.getElementById('zoneGrid').style.display=(m==='grid')?'grid':'none';
-  if(m==='grid') buildZoneGrid();
-  // Reset motion overlay
-  if(ctx && canvas) ctx.clearRect(0,0,canvas.width,canvas.height);
-}
-
-function buildZoneGrid(){
-  const g=document.getElementById('zoneGrid');
-  g.style.gridTemplateColumns=`repeat(${gridSize},1fr)`;
-  g.innerHTML='';
-  for(let i=0;i<gridSize*gridSize;i++){
-    g.innerHTML+=`<div class="zone-cell"><div class="zone-num" id="z${i}">0</div><div class="zone-lbl">Bölge ${i+1}</div></div>`;
-  }
-}
-
-function setGrid(n){gridSize=n;buildZoneGrid()}
-
-async function startCam(){
-  video=document.getElementById('video');
-  canvas=document.getElementById('overlay');
-  ctx=canvas.getContext('2d',{willReadFrequently:true});
-  document.getElementById('startBtn').disabled=true;
-  document.getElementById('statusPill').textContent='AÇILIYOR';
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}
+async function startCam() {
+  video = document.getElementById('video');
+  snapCanvas = document.getElementById('snapCanvas');
+  snapCtx = snapCanvas.getContext('2d');
+  document.getElementById('startBtn').disabled = true;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
     });
-    video.srcObject=stream;
-    await new Promise(r=>{video.onloadedmetadata=r});
+    video.srcObject = stream;
+    await new Promise(r => { video.onloadedmetadata = r });
     await video.play();
-    document.getElementById('placeholder').style.display='none';
-    video.style.display='block';
-    document.getElementById('camWrap').classList.add('scanning');
-    canvas.width=video.videoWidth||640;
-    canvas.height=video.videoHeight||480;
-    isRunning=true;
-    document.getElementById('pauseBtn').disabled=false;
-    document.getElementById('snapBtn').disabled=false;
-    document.getElementById('resetBtn').disabled=false;
-    document.getElementById('startBtn').textContent='✅ Kamera Açık';
-    document.getElementById('statusPill').textContent='CANLI';
-    loop();
-  }catch(e){
-    document.getElementById('startBtn').disabled=false;
-    document.getElementById('startBtn').textContent='🔄 Tekrar Dene';
-    document.getElementById('statusPill').textContent='HATA';
-    let msg='Kamera açılamadı: '+e.message;
-    if(e.name==='NotAllowedError')msg='Kamera izni reddedildi. Tarayıcı ayarlarından izin ver.';
+    document.getElementById('placeholder').style.display = 'none';
+    video.style.display = 'block';
+    document.getElementById('frozenImg').style.display = 'none';
+    snapCanvas.width = video.videoWidth || 1280;
+    snapCanvas.height = video.videoHeight || 720;
+    isRunning = true;
+    document.getElementById('snapBtn').disabled = false;
+    document.getElementById('startBtn').textContent = '✅ Kamera Açık';
+  } catch(e) {
+    document.getElementById('startBtn').disabled = false;
+    let msg = 'Kamera açılamadı.';
+    if (e.name === 'NotAllowedError') msg = 'Kamera izni gerekli! Tarayıcı ayarlarından izin ver.';
     alert(msg);
   }
 }
 
-// Off-screen canvas for pixel analysis
-const offCanvas=document.createElement('canvas');
-const offCtx=offCanvas.getContext('2d',{willReadFrequently:true});
-const SAMPLE_W=80, SAMPLE_H=60;
-offCanvas.width=SAMPLE_W; offCanvas.height=SAMPLE_H;
+async function takeSnap() {
+  if (!isRunning) return;
+  document.getElementById('snapBtn').disabled = true;
 
-function loop(){
-  if(!isRunning)return;
-  if(!isPaused && video.readyState===4){
-    frames++;
-    const now=performance.now();
-    const fps=Math.round(1000/(now-lastTime));
-    lastTime=now;
-    document.getElementById('fpsEl').textContent=fps+' FPS';
-    document.getElementById('s3').textContent=frames;
+  // Freeze frame
+  snapCtx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
+  const dataUrl = snapCanvas.toDataURL('image/jpeg', 0.85);
+  const base64 = dataUrl.split(',')[1];
 
-    // Draw video to off-screen small canvas for analysis
-    offCtx.drawImage(video,0,0,SAMPLE_W,SAMPLE_H);
-    const cur=offCtx.getImageData(0,0,SAMPLE_W,SAMPLE_H);
+  // Show frozen image
+  const frozenImg = document.getElementById('frozenImg');
+  frozenImg.src = dataUrl;
+  frozenImg.style.display = 'block';
+  video.style.display = 'none';
 
-    if(prevFrame){
-      if(mode==='motion') analyzeMotion(cur,fps);
-      else if(mode==='grid') analyzeGrid(cur);
+  // Show analyzing overlay
+  document.getElementById('analyzingOverlay').classList.add('show');
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultCount').style.display = 'none';
+  document.getElementById('aiResponse').classList.remove('show');
+
+  const question = document.getElementById('questionInput').value ||
+    'Bu görüntüdeki nesneleri say ve kaç tane olduğunu söyle.';
+
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: `Sen bir nesne sayma asistanısın. Türkçe cevap ver. Soru: ${question}\n\nCevabının başına mutlaka şu formatı koy: SAYI: [sadece rakam]\nSonra detaylı açıklamanı yaz.` },
+            { inline_data: { mime_type: 'image/jpeg', data: base64 } }
+          ]
+        }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 500 }
+      })
+    });
+
+    const data = await resp.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sonuç alınamadı.';
+
+    // Parse number
+    const match = text.match(/SAYI:\s*(\d+)/i);
+    const count = match ? parseInt(match[1]) : null;
+    const cleanText = text.replace(/SAYI:\s*\d+/i, '').trim();
+
+    // Show result
+    document.getElementById('analyzingOverlay').classList.remove('show');
+    if (count !== null) {
+      document.getElementById('bigNum').textContent = count;
+      document.getElementById('resultCount').style.display = 'flex';
     }
-    prevFrame=cur;
-  }
-  requestAnimationFrame(loop);
-}
+    document.getElementById('aiResponse').textContent = cleanText;
+    document.getElementById('aiResponse').classList.add('show');
 
-function analyzeMotion(cur, fps){
-  const data=cur.data, prev=prevFrame.data;
-  let motionPixels=0;
-  const total=SAMPLE_W*SAMPLE_H;
-  // Left half vs right half for crossing detection
-  let leftMotion=0, rightMotion=0;
+    // Add to history
+    addHistory(count, cleanText, dataUrl);
+    document.getElementById('resumeBtn').disabled = false;
 
-  for(let i=0;i<total;i++){
-    const idx=i*4;
-    const dr=Math.abs(data[idx]-prev[idx]);
-    const dg=Math.abs(data[idx+1]-prev[idx+1]);
-    const db=Math.abs(data[idx+2]-prev[idx+2]);
-    const diff=(dr+dg+db)/3;
-    if(diff>sensitivity){
-      motionPixels++;
-      const x=i%SAMPLE_W;
-      if(x<SAMPLE_W/2) leftMotion++; else rightMotion++;
-    }
-  }
-
-  const motionPct=Math.round(motionPixels/total*100);
-  document.getElementById('motionVal').textContent=motionPct+'%';
-
-  // Draw motion overlay on main canvas
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(motionPct>5){
-    // Draw glowing border
-    const alpha=Math.min(motionPct/30,1);
-    ctx.strokeStyle=`rgba(0,255,136,${alpha})`;
-    ctx.lineWidth=3;
-    ctx.strokeRect(4,4,canvas.width-8,canvas.height-8);
-
-    // Motion bar at bottom
-    const barW=(motionPct/100)*canvas.width;
-    const grad=ctx.createLinearGradient(0,0,canvas.width,0);
-    grad.addColorStop(0,'rgba(0,255,136,0.6)');
-    grad.addColorStop(1,'rgba(0,212,255,0.6)');
-    ctx.fillStyle=grad;
-    ctx.fillRect(0,canvas.height-8,barW,8);
-  }
-
-  // Crossing detection: significant motion that appears then disappears
-  const isMotionNow=motionPct>15;
-  if(!wasMotion && isMotionNow){
-    totalCross++;
-    motionCount++;
-    document.getElementById('s2').textContent=totalCross;
-  }
-  wasMotion=isMotionNow;
-
-  // Update counts
-  const displayCount=mode==='manual'?manualCount:motionCount;
-  document.getElementById('bigCount').textContent=displayCount;
-  if(displayCount>maxCount){maxCount=displayCount;document.getElementById('s1').textContent=maxCount}
-}
-
-function analyzeGrid(cur){
-  const data=cur.data, prev=prevFrame.data;
-  const cellW=Math.floor(SAMPLE_W/gridSize);
-  const cellH=Math.floor(SAMPLE_H/gridSize);
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  let total=0;
-
-  for(let gy=0;gy<gridSize;gy++){
-    for(let gx=0;gx<gridSize;gx++){
-      let cellMotion=0, cellPixels=0;
-      for(let py=gy*cellH;py<(gy+1)*cellH;py++){
-        for(let px=gx*cellW;px<(gx+1)*cellW;px++){
-          const i=(py*SAMPLE_W+px)*4;
-          const dr=Math.abs(data[i]-prev[i]);
-          const dg=Math.abs(data[i+1]-prev[i+1]);
-          const db=Math.abs(data[i+2]-prev[i+2]);
-          if((dr+dg+db)/3>sensitivity) cellMotion++;
-          cellPixels++;
-        }
-      }
-      const pct=Math.round(cellMotion/cellPixels*100);
-      const zoneIdx=gy*gridSize+gx;
-      const el=document.getElementById('z'+zoneIdx);
-      if(el) el.textContent=pct+'%';
-      total+=pct;
-
-      // Draw on overlay
-      const cw=canvas.width/gridSize, ch=canvas.height/gridSize;
-      const alpha=Math.min(pct/40,0.6);
-      if(pct>10){
-        ctx.fillStyle=`rgba(0,255,136,${alpha})`;
-        ctx.fillRect(gx*cw+2,gy*ch+2,cw-4,ch-4);
-      }
-      ctx.strokeStyle=`rgba(0,255,136,0.3)`;
-      ctx.lineWidth=1;
-      ctx.strokeRect(gx*cw,gy*ch,cw,ch);
-
-      // Label
-      ctx.fillStyle='rgba(0,255,136,0.9)';
-      ctx.font=`bold ${Math.round(cw/5)}px monospace`;
-      ctx.fillText(pct+'%',gx*cw+6,gy*ch+Math.round(cw/4)+2);
-    }
-  }
-  document.getElementById('bigCount').textContent=Math.round(total/(gridSize*gridSize))+'%';
-  document.getElementById('motionVal').textContent=gridSize+'×'+gridSize;
-}
-
-function takeSnap(){
-  // Capture current frame analysis result as snapshot
-  if(!video||!canvas) return;
-  // Flash effect
-  const flash=document.createElement('div');
-  flash.style.cssText='position:absolute;inset:0;background:white;z-index:99;opacity:.7;border-radius:14px;transition:opacity .3s';
-  document.getElementById('camWrap').appendChild(flash);
-  setTimeout(()=>{flash.style.opacity='0';setTimeout(()=>flash.remove(),300)},100);
-
-  // If grid mode, force a grid analysis snapshot
-  if(mode==='grid' && prevFrame){
-    offCtx.drawImage(video,0,0,SAMPLE_W,SAMPLE_H);
-    const cur=offCtx.getImageData(0,0,SAMPLE_W,SAMPLE_H);
-    analyzeGrid(cur);
-    prevFrame=cur;
+  } catch(e) {
+    document.getElementById('analyzingOverlay').classList.remove('show');
+    document.getElementById('aiResponse').textContent = '❌ Hata: ' + e.message + '\n\nİnternet bağlantınızı kontrol edin.';
+    document.getElementById('aiResponse').classList.add('show');
+    document.getElementById('snapBtn').disabled = false;
   }
 }
 
-function manualAdd(){manualCount++;updateManual()}
-function manualSub(){if(manualCount>0){manualCount--;updateManual()}}
-function updateManual(){
-  document.getElementById('bigCount').textContent=manualCount;
-  if(manualCount>maxCount){maxCount=manualCount;document.getElementById('s1').textContent=maxCount}
+function resumeCam() {
+  const frozenImg = document.getElementById('frozenImg');
+  frozenImg.style.display = 'none';
+  video.style.display = 'block';
+  document.getElementById('snapBtn').disabled = false;
+  document.getElementById('resumeBtn').disabled = true;
 }
 
-function togglePause(){
-  isPaused=!isPaused;
-  document.getElementById('pauseBtn').textContent=isPaused?'▶ Devam':'⏸ Duraklat';
-  document.getElementById('camWrap').classList.toggle('scanning',!isPaused);
-  document.getElementById('statusPill').textContent=isPaused?'DURAKLADI':'CANLI';
+function resetAll() {
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('resultCount').style.display = 'none';
+  document.getElementById('aiResponse').classList.remove('show');
+  document.getElementById('aiResponse').textContent = '';
+  if (video && video.style) {
+    document.getElementById('frozenImg').style.display = 'none';
+    if (isRunning) video.style.display = 'block';
+  }
+  document.getElementById('resumeBtn').disabled = true;
+  if (isRunning) document.getElementById('snapBtn').disabled = false;
 }
 
-function resetAll(){
-  manualCount=0;motionCount=0;totalCross=0;frames=0;maxCount=0;wasMotion=false;
-  document.getElementById('bigCount').textContent='0';
-  document.getElementById('motionVal').textContent='—';
-  document.getElementById('s1').textContent='0';
-  document.getElementById('s2').textContent='0';
-  document.getElementById('s3').textContent='0';
-  if(ctx&&canvas) ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(mode==='grid') buildZoneGrid();
+function addHistory(count, desc, thumb) {
+  const time = new Date().toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'});
+  history.unshift({ count, desc: desc.slice(0, 80) + (desc.length > 80 ? '...' : ''), time });
+  if (history.length > 5) history.pop();
+  renderHistory();
 }
 
-function updateSens(v){sensitivity=parseInt(v);document.getElementById('sensVal').textContent=v}
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (history.length === 0) {
+    list.innerHTML = '<div class="no-history">Henüz analiz yapılmadı</div>';
+    return;
+  }
+  list.innerHTML = history.map(h => `
+    <div class="h-item">
+      <div class="h-num">${h.count !== null ? h.count : '?'}</div>
+      <div class="h-desc">${h.desc}</div>
+      <div class="h-time">${h.time}</div>
+    </div>
+  `).join('');
+}
 
-// Init grid
-buildZoneGrid();
+function setQ(q) {
+  document.getElementById('questionInput').value = q;
+}
 </script>
 </body>
 </html>
