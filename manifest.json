@@ -1,0 +1,23 @@
+{
+  "name": "NesneAI",
+  "short_name": "NesneAI",
+  "description": "Kamera ile nesne analizi ve sayma uygulaması.",
+  "start_url": "/nesne-sayici/",
+  "scope": "/nesne-sayici/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/nesne-sayici/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/nesne-sayici/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

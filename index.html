@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>NesneAI</title>
+<meta name="theme-color" content="#0a0a0f">
+<link rel="manifest" href="/nesne-sayici/manifest.json">
+<link rel="apple-touch-icon" href="/nesne-sayici/icons/icon-192.png">
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
 :root{--bg:#0a0a0f;--surface:#12121a;--border:#1e1e2e;--accent:#00ff88;--accent3:#00d4ff;--text:#e8e8f0;--muted:#5a5a7a;--card:#16161f}
@@ -429,6 +433,15 @@ function addHistory(count, desc) {
 }
 
 function setQ(q) { document.getElementById('qInput').value = q; }
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/nesne-sayici/sw.js').catch(function(err) {
+      console.log('Service worker kayıt hatası:', err);
+    });
+  });
+}
+
 </script>
 </body>
 </html>
