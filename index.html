@@ -109,7 +109,6 @@ video{width:100%;height:100%;object-fit:cover;display:block}
     <div class="badge">GEMINI 2.5</div>
   </header>
 
-  <!-- API KEY -->
   <div class="key-section">
     <span class="key-label">GEMİNİ API KEY</span>
     <div class="key-row">
@@ -121,7 +120,6 @@ video{width:100%;height:100%;object-fit:cover;display:block}
     <div class="key-status" id="keyStatus">⚠ Key girilmedi — aistudio.google.com'dan al</div>
   </div>
 
-  <!-- CAMERA -->
   <div class="cam-section">
     <div class="cam-wrap" id="camWrap">
       <div class="corner corner-tl"></div>
@@ -142,21 +140,19 @@ video{width:100%;height:100%;object-fit:cover;display:block}
     </div>
   </div>
 
-  <!-- QUESTION -->
   <div class="q-section">
     <span class="lbl">SORU / KOMUT</span>
     <input class="q-input" id="qInput" type="text"
-      value="Görüntüdeki tüm nesneleri listele ve her birinin kaç tane olduğunu söyle.">
+      value="Sadece açıkça görünen bağımsız ana nesneleri listele ve her birinin adetini yaz. Aynı nesneyi iki kez sayma. Arka plan, yüzey, mobilya parçası, yansıma ve desenleri sayma.">
     <div class="quick-qs">
-      <button class="qq" onclick="setQ('Görüntüdeki tüm nesneleri listele ve her birinin kaç tane olduğunu söyle.')">🔢 Tümünü say</button>
-      <button class="qq" onclick="setQ('Sadece şekerleri say ve kaç tane olduğunu söyle.')">🍬 Şekerleri say</button>
-      <button class="qq" onclick="setQ('Görüntüdeki geometrik şekilleri say: kare, daire, üçgen, dikdörtgen kaç tane var?')">📐 Şekil analizi</button>
-      <button class="qq" onclick="setQ('Bu görüntüyü detaylıca tanımla. Ne var, renkleri ve konumları neler?')">🔍 Detaylı tanımla</button>
-      <button class="qq" onclick="setQ('Kaç tane insan var? Varsa ne yapıyorlar?')">👤 Kişi say</button>
+      <button class="qq" onclick="setQ('Sadece açıkça görünen bağımsız ana nesneleri listele ve her birinin adetini yaz. Aynı nesneyi iki kez sayma. Arka plan, yüzey, mobilya parçası, yansıma ve desenleri sayma.')">🔢 Tümünü say</button>
+      <button class="qq" onclick="setQ('Sadece açıkça görünen şekerleri say ve kaç tane olduğunu yaz. Emin olmadıklarını sayma.')">🍬 Şekerleri say</button>
+      <button class="qq" onclick="setQ('Sadece açıkça görünen geometrik şekilleri say: kare, daire, üçgen, dikdörtgen kaç tane var? Tahmin etme, emin olmadıklarını yazma.')">📐 Şekil analizi</button>
+      <button class="qq" onclick="setQ('Bu görüntüyü kısa ve net şekilde tanımla. Sadece açıkça görülen ana nesneleri ve konumlarını yaz.')">🔍 Detaylı tanımla</button>
+      <button class="qq" onclick="setQ('Kaç tane insan var? Sadece açıkça görünen insanları say. Emin değilsen 0 yaz.')">👤 Kişi say</button>
     </div>
   </div>
 
-  <!-- RESULT -->
   <div class="result-section">
     <div class="result-card">
       <div class="r-label">AI SONUCU</div>
@@ -173,7 +169,6 @@ video{width:100%;height:100%;object-fit:cover;display:block}
     </div>
   </div>
 
-  <!-- CONTROLS -->
   <div class="controls">
     <button class="btn-cam" id="startBtn" onclick="startCam()">📷 Kamerayı Başlat</button>
     <button class="btn-snap" id="snapBtn" onclick="takeSnap()" disabled>
@@ -185,7 +180,6 @@ video{width:100%;height:100%;object-fit:cover;display:block}
     </div>
   </div>
 
-  <!-- HISTORY -->
   <div class="hist-section">
     <span class="lbl">GEÇMİŞ ANALİZLER</span>
     <div id="histList"><div class="no-hist">Henüz analiz yapılmadı</div></div>
@@ -193,12 +187,10 @@ video{width:100%;height:100%;object-fit:cover;display:block}
 </div>
 
 <script>
-// ── STATE ────────────────────────────────────────────
 var geminiKey = '';
 var video, snapCanvas, snapCtx, stream, isRunning = false;
 var historyArr = [];
 
-// ── KEY MANAGEMENT ───────────────────────────────────
 function saveKey() {
   var input = document.getElementById('keyInput');
   var k = input.value.trim();
@@ -217,7 +209,6 @@ function showKeyOk(k) {
   st.className = 'key-status ok';
 }
 
-// Load key on page start
 (function() {
   var saved = '';
   try { saved = localStorage.getItem('gkey') || ''; } catch(e) {}
@@ -228,21 +219,26 @@ function showKeyOk(k) {
   }
 })();
 
-// ── CAMERA ───────────────────────────────────────────
 function startCam() {
   if (!geminiKey) {
     alert('Önce API key girin ve Kaydet butonuna basın!');
     return;
   }
+
   video = document.getElementById('video');
   snapCanvas = document.getElementById('snapCanvas');
   snapCtx = snapCanvas.getContext('2d');
+
   var btn = document.getElementById('startBtn');
   btn.disabled = true;
   btn.textContent = '⏳ Açılıyor...';
 
   navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }
+    video: {
+      facingMode: { ideal: 'environment' },
+      width: { ideal: 1280 },
+      height: { ideal: 960 }
+    }
   }).then(function(s) {
     stream = s;
     video.srcObject = s;
@@ -264,10 +260,12 @@ function startCam() {
   });
 }
 
-// ── SNAP & ANALYZE ────────────────────────────────────
 function takeSnap() {
   if (!isRunning) return;
-  if (!geminiKey) { alert('API key girilmedi!'); return; }
+  if (!geminiKey) {
+    alert('API key girilmedi!');
+    return;
+  }
 
   snapCtx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
   var dataUrl = snapCanvas.toDataURL('image/jpeg', 0.85);
@@ -286,18 +284,25 @@ function takeSnap() {
   document.getElementById('snapBtn').disabled = true;
 
   var question = document.getElementById('qInput').value.trim() ||
-    'Görüntüdeki tüm nesneleri listele ve her birinin kaç tane olduğunu söyle.';
+    'Sadece açıkça görünen bağımsız ana nesneleri listele ve her birinin adetini yaz. Aynı nesneyi iki kez sayma. Arka plan, yüzey, mobilya parçası, yansıma ve desenleri sayma.';
 
-  var prompt = 'Sen görüntü analizi ve nesne sayma uzmanısın. Türkçe cevap ver.\n\n' +
+  var prompt =
+    'Sen görüntü analizi ve nesne sayma uzmanısın. Türkçe cevap ver.\n\n' +
     'GÖREV: ' + question + '\n\n' +
+    'KURALLAR:\n' +
+    '1. Sadece fotoğrafta açıkça görünen bağımsız ana nesneleri say.\n' +
+    '2. Aynı nesneyi ikinci kez sayma.\n' +
+    '3. Nesne parçalarını ayrı nesne sayma.\n' +
+    '4. Arka planı, yüzeyleri, masa bölümlerini, dolap parçalarını, desenleri, yansımaları ve gölgeleri sayma.\n' +
+    '5. Emin olmadığın nesneleri listeleme.\n' +
+    '6. Sadece gerçekten seçilebilen nesneleri yaz.\n\n' +
     'CEVABI MUTLAKA ŞU FORMATTA VER:\n' +
-    'TOPLAM: [toplam nesne sayısı - sadece rakam]\n' +
     'NESNELER:\n' +
     '- [nesne adı]: [adet]\n' +
     '- [nesne adı]: [adet]\n' +
-    '(tüm farklı nesneler için tekrarla)\n' +
-    'YORUM: [2-3 cümle genel açıklama]\n\n' +
-    'Dikkatli say, her nesne türünü ayrı yaz.';
+    'YORUM: [kısa açıklama]\n\n' +
+    'TOPLAM satırı yazma. Toplamı ben hesaplayacağım.\n' +
+    'Adetler sadece rakam olsun.';
 
   var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + geminiKey;
 
@@ -305,22 +310,38 @@ function takeSnap() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      contents: [{ parts: [
-        { text: prompt },
-        { inline_data: { mime_type: 'image/jpeg', data: base64 } }
-      ]}],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: 'image/jpeg', data: base64 } }
+        ]
+      }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 1000
+      }
     })
   })
   .then(function(r) {
-    if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t); });
+    if (!r.ok) {
+      return r.text().then(function(t) {
+        throw new Error('HTTP ' + r.status + ': ' + t);
+      });
+    }
     return r.json();
   })
   .then(function(data) {
-    var text = data && data.candidates && data.candidates[0] &&
-               data.candidates[0].content && data.candidates[0].content.parts &&
-               data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+    var text =
+      data &&
+      data.candidates &&
+      data.candidates[0] &&
+      data.candidates[0].content &&
+      data.candidates[0].content.parts &&
+      data.candidates[0].content.parts[0] &&
+      data.candidates[0].content.parts[0].text;
+
     if (!text) throw new Error('Boş yanıt');
+
     document.getElementById('analyzing').classList.remove('show');
     showResult(text);
     document.getElementById('resumeBtn').disabled = false;
@@ -334,71 +355,90 @@ function takeSnap() {
   });
 }
 
-function showResult(text) {
-  // Parse TOPLAM
-  var toplamMatch = text.match(/TOPLAM:\s*(\d+)/i);
-  var toplam = toplamMatch ? parseInt(toplamMatch[1]) : null;
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
-  // Parse NESNELER
-  var nesneMatch = text.match(/NESNELER:\n([\s\S]+?)(?=YORUM:|$)/i);
+function showResult(text) {
+  var nesneMatch = text.match(/NESNELER:\s*([\s\S]+?)(?=YORUM:|$)/i);
   var nesneItems = [];
+  var toplam = 0;
+
   if (nesneMatch) {
     var lines = nesneMatch[1].split('\n');
+
     lines.forEach(function(line) {
       line = line.trim();
-      if (!line || !line.startsWith('-')) return;
+      if (!line || line.indexOf('-') !== 0) return;
+
       line = line.replace(/^-\s*/, '');
       var parts = line.split(':');
-      if (parts.length >= 2) {
-        nesneItems.push({ name: parts[0].trim(), count: parts.slice(1).join(':').trim() });
+      if (parts.length < 2) return;
+
+      var name = parts[0].trim();
+      var countText = parts.slice(1).join(':').trim();
+      var numberMatch = countText.match(/\d+/);
+      var countNum = numberMatch ? parseInt(numberMatch[0], 10) : 0;
+
+      if (name && countNum > 0) {
+        nesneItems.push({
+          name: name,
+          count: countNum
+        });
+        toplam += countNum;
       }
     });
   }
 
-  // Parse YORUM
   var yorumMatch = text.match(/YORUM:\s*([\s\S]+?)(?=$|\n\n)/i);
   var yorum = yorumMatch ? yorumMatch[1].trim() : '';
 
-  // Show count
-  if (toplam !== null) {
-    document.getElementById('bigNum').textContent = toplam;
-    document.getElementById('resultCount').style.display = 'flex';
-  }
+  document.getElementById('bigNum').textContent = toplam;
+  document.getElementById('resultCount').style.display = 'flex';
 
-  // Show list
   if (nesneItems.length > 0) {
     var html = '';
     nesneItems.forEach(function(item) {
       html += '<div class="nesne-item">' +
-        '<span class="nesne-name">🔹 ' + item.name + '</span>' +
+        '<span class="nesne-name">🔹 ' + escapeHtml(item.name) + '</span>' +
         '<span class="nesne-count">' + item.count + '</span>' +
         '</div>';
     });
+
     document.getElementById('nesneList').innerHTML = html;
     document.getElementById('nesneList').style.display = 'block';
   } else {
-    // Fallback: show raw text
     document.getElementById('nesneList').innerHTML =
-      '<div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">' + text + '</div>';
+      '<div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">' +
+      escapeHtml(text) +
+      '</div>';
     document.getElementById('nesneList').style.display = 'block';
   }
 
-  // Show yorum
   if (yorum) {
     document.getElementById('aciklama').textContent = yorum;
     document.getElementById('aciklama').style.display = 'block';
   }
 
-  // History
   var desc = nesneItems.length > 0
     ? nesneItems.map(function(i) { return i.count + ' ' + i.name; }).join(', ').slice(0, 80)
     : text.slice(0, 80);
+
   addHistory(toplam, desc);
 }
 
 function showError(msg) {
+  document.getElementById('resultCount').style.display = 'none';
+  document.getElementById('aciklama').style.display = 'none';
   document.getElementById('nesneList').innerHTML =
-    '<div style="color:#ff6b6b;font-size:12px;font-family:monospace;word-break:break-all">❌ ' + msg + '</div>';
+    '<div style="color:#ff6b6b;font-size:12px;font-family:monospace;word-break:break-all">❌ ' +
+    escapeHtml(msg) +
+    '</div>';
   document.getElementById('nesneList').style.display = 'block';
   addHistory(null, 'Hata: ' + msg.slice(0, 60));
 }
@@ -419,20 +459,33 @@ function resetResult() {
 }
 
 function addHistory(count, desc) {
-  var time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-  historyArr.unshift({ count: count, desc: desc || '', time: time });
+  var time = new Date().toLocaleTimeString('tr-TR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  historyArr.unshift({
+    count: count,
+    desc: desc || '',
+    time: time
+  });
+
   if (historyArr.length > 6) historyArr.pop();
+
   var html = historyArr.map(function(h) {
     return '<div class="h-item">' +
       '<div class="h-num">' + (h.count != null ? h.count : '?') + '</div>' +
-      '<div class="h-desc">' + h.desc + '</div>' +
+      '<div class="h-desc">' + escapeHtml(h.desc) + '</div>' +
       '<div class="h-time">' + h.time + '</div>' +
       '</div>';
   }).join('');
+
   document.getElementById('histList').innerHTML = html;
 }
 
-function setQ(q) { document.getElementById('qInput').value = q; }
+function setQ(q) {
+  document.getElementById('qInput').value = q;
+}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
@@ -441,7 +494,6 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
-
 </script>
 </body>
 </html>
